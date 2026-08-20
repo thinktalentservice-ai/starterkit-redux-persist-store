@@ -1,0 +1,4 @@
+# pnpm reads build-script approvals from here (no longer from package.json).
+# esbuild ships a platform-specific binary and needs its postinstall to run.
+allowBuilds:
+  esbuild: true

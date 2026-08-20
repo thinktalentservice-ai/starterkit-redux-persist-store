@@ -1,0 +1,89 @@
+{
+  "name": "@devopsnext/starterkit-redux-persist-store",
+  "version": "0.1.0",
+  "description": "Per-slice Redux persistence with pluggable storage drivers — one storage key per slice, plain or encrypted, SSR-safe.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thinktalentservice-ai/starterkit-redux-persist-store.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js",
+      "require": "./dist/react.cjs"
+    },
+    "./secure": {
+      "types": "./dist/secure.d.ts",
+      "import": "./dist/secure.js",
+      "require": "./dist/secure.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsc --noEmit && tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "verify": "pnpm typecheck && pnpm test && pnpm build"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-redux": ">=9",
+    "redux": ">=5.0.0",
+    "secure-ls": ">=2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-redux": {
+      "optional": true
+    },
+    "secure-ls": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.2.14",
+    "jsdom": "^26.1.0",
+    "react": "19.2.6",
+    "redux": "^5.0.1",
+    "secure-ls": "^2.0.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4",
+    "react-redux": "^9.2.0",
+    "@testing-library/react": "^16.3.0",
+    "react-dom": "19.2.6",
+    "@types/react-dom": "^19.2.3"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "redux",
+    "persist",
+    "localstorage",
+    "redux-toolkit",
+    "starterkit"
+  ]
+}
