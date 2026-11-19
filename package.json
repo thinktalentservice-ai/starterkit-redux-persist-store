@@ -1,6 +1,6 @@
 {
   "name": "@devopsnext/starterkit-redux-persist-store",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Per-slice Redux persistence with pluggable storage drivers — one storage key per slice, plain or encrypted, SSR-safe.",
   "license": "MIT",
   "repository": {
