@@ -1,0 +1,51 @@
+name: CI
+
+# Build gate. Runs on:
+#   - every push to any branch (tags ignored; release workflows handle those)
+#   - every pull request (make the "Build" job a required status check so a
+#     failing build blocks the merge — see branch protection setup)
+#   - workflow_call: release workflows reuse this as their "build must pass" gate
+on:
+  push:
+    branches: ["**"]
+    tags-ignore: ["**"]
+  pull_request:
+  workflow_call:
+
+# Cancel superseded runs on the same ref, but never cancel when called from a
+# release workflow (that would kill the release gate).
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      # No "packageManager" field in package.json, so pin the pnpm major here.
+      # Lockfile is v9; allowBuilds in pnpm-workspace.yaml needs a recent pnpm.
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # `pnpm build` = `tsc --noEmit && tsup` (typecheck + bundle).
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build

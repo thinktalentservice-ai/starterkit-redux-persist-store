@@ -1,0 +1,104 @@
+name: Release - Publish Storybook to GitHub Pages
+
+# Fires when a GitHub Release is published. Deploys Storybook ONLY IF:
+#   1. the CI build gate passed, AND
+#   2. GitHub Pages is already enabled for this repo, AND
+#   3. the project has a "build-storybook" script.
+# Otherwise the deploy jobs are skipped (not failed).
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build gate
+    uses: ./.github/workflows/ci.yml
+
+  detect:
+    name: Detect existing GitHub Pages site
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: read
+    outputs:
+      # "" (skip) | "workflow" (Source: GitHub Actions) | "legacy" (Source: branch)
+      mode: ${{ steps.detect.outputs.mode }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: detect
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          mode=""
+          if ! node -e "process.exit(require('./package.json').scripts?.['build-storybook'] ? 0 : 1)"; then
+            echo "::notice::No 'build-storybook' script in package.json - skipping Pages deploy."
+          elif build_type=$(gh api "repos/$REPO/pages" --jq .build_type 2>/dev/null); then
+            mode="$build_type"
+            echo "::notice::GitHub Pages already enabled (build_type=$build_type) - will deploy."
+          else
+            echo "::notice::GitHub Pages is not enabled for this repo - skipping Pages deploy."
+          fi
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+
+  # Pages source = "GitHub Actions"
+  deploy-actions:
+    name: Deploy (GitHub Actions source)
+    needs: [build, detect]
+    if: needs.detect.outputs.mode == 'workflow'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build-storybook
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: storybook-static
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  # Pages source = "Deploy from a branch" (gh-pages)
+  deploy-branch:
+    name: Deploy (gh-pages branch source)
+    needs: [build, detect]
+    if: needs.detect.outputs.mode == 'legacy'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build-storybook
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: storybook-static
+          publish_branch: gh-pages
